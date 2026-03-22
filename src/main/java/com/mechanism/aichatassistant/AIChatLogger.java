@@ -2,8 +2,10 @@ package com.mechanism.aichatassistant;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -22,7 +24,7 @@ public class AIChatLogger {
     private static void write(String level, String message) {
         String line = "[" + LocalDateTime.now().format(DATE_FORMAT) + "] [" + level + "] " + message;
         MechanismAIChatAssistant.LOGGER.info(line);
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(getLogFile(), true))) {
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(getLogFile(), true), StandardCharsets.UTF_8))) {
             writer.write(line);
             writer.newLine();
         } catch (IOException e) {

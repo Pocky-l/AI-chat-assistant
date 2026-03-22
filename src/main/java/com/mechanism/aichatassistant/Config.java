@@ -17,6 +17,10 @@ public class Config {
             .comment("Use Claude CLI instead of direct API. Requires 'claude' to be installed and logged in.")
             .define("useCLI", true);
 
+    public static final ModConfigSpec.ConfigValue<String> CLAUDE_CLI_PATH = BUILDER
+            .comment("Full path to the claude CLI executable. On Windows use claude.cmd path.")
+            .define("claudeCLIPath", "C:\\Users\\rkush\\AppData\\Roaming\\npm\\claude.cmd");
+
     public static final ModConfigSpec.ConfigValue<String> AI_NAME = BUILDER
             .comment("The name displayed in chat when the AI responds.")
             .define("aiName", "Assistant");
