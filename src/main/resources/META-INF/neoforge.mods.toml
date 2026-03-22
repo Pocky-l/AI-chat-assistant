@@ -42,11 +42,13 @@ displayName="${mod_name}" #mandatory
 #credits="" #optional
 
 # The authors of the mod, displayed in the mod UI (optional)
-#authors=""
+authors="Pocky, YukiLink"
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-Example mod description.
+Mechanism AI Chat Assistant brings an intelligent AI companion right into your Minecraft world.
+Ask questions, get help, and chat with an AI without ever leaving the game.
+[Work in progress]
 '''
 
 # The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.

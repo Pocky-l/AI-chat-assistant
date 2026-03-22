@@ -62,6 +62,14 @@ runs {
     client {
         // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
         systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        // Run in offline mode for development
+        arguments '--username', 'Dev', '--accessToken', '0', '--uuid', '00000000-0000-0000-0000-000000000000'
+        // Skip online auth checks
+        systemProperty 'minecraft.api.env', 'custom'
+        systemProperty 'minecraft.api.auth.host', 'http://localhost'
+        systemProperty 'minecraft.api.account.host', 'http://localhost'
+        systemProperty 'minecraft.api.session.host', 'http://localhost'
+        systemProperty 'minecraft.api.services.host', 'http://localhost'
     }
 
     server {
