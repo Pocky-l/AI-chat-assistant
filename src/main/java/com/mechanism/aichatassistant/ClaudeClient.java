@@ -34,6 +34,10 @@ public class ClaudeClient {
      * Sends a question to Claude and returns the response with token usage asynchronously.
      */
     public static CompletableFuture<AskResult> ask(String question) {
+        return ask(question, SYSTEM_PROMPT);
+    }
+
+    public static CompletableFuture<AskResult> ask(String question, String systemPrompt) {
         String apiKey = Config.ANTHROPIC_API_KEY.get();
 
         if (apiKey == null || apiKey.isBlank()) {
@@ -43,8 +47,8 @@ public class ClaudeClient {
 
         JsonObject body = new JsonObject();
         body.addProperty("model", MODEL);
-        body.addProperty("max_tokens", 512);
-        body.addProperty("system", SYSTEM_PROMPT);
+        body.addProperty("max_tokens", 768);
+        body.addProperty("system", systemPrompt);
 
         JsonArray messages = new JsonArray();
         JsonObject userMessage = new JsonObject();
