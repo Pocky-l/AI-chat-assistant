@@ -10,8 +10,12 @@ public class Config {
             .define("triggerPrefix", "?");
 
     public static final ModConfigSpec.ConfigValue<String> ANTHROPIC_API_KEY = BUILDER
-            .comment("Your Anthropic API key. Get one at https://console.anthropic.com/")
+            .comment("Your Anthropic API key. Get one at https://console.anthropic.com/. Not needed if useCLI is true.")
             .define("apiKey", "");
+
+    public static final ModConfigSpec.BooleanValue USE_CLI = BUILDER
+            .comment("Use Claude CLI instead of direct API. Requires 'claude' to be installed and logged in.")
+            .define("useCLI", true);
 
     public static final ModConfigSpec.ConfigValue<String> AI_NAME = BUILDER
             .comment("The name displayed in chat when the AI responds.")

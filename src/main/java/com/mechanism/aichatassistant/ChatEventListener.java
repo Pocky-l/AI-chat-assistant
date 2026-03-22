@@ -25,6 +25,18 @@ public class ChatEventListener {
         String aiName = Config.AI_NAME.get();
 
         AIChatLogger.logQuestion(playerName, question);
+
+        // Check memory for existing answer
+        String cached = MemoryStorage.findAnswer(question);
+        if (cached != null) {
+            AIChatLogger.logAnswer("[from memory] " + cached, 0, 0);
+            Component response = Component.literal("[" + aiName + "] " + cached);
+            for (ServerPlayer player : event.getPlayer().getServer().getPlayerList().getPlayers()) {
+                player.sendSystemMessage(response);
+            }
+            return;
+        }
+
         event.getPlayer().sendSystemMessage(Component.literal("[" + aiName + "] Thinking..."));
 
         // Step 1: extract mod context asynchronously
@@ -34,14 +46,18 @@ public class ChatEventListener {
                 MechanismAIChatAssistant.LOGGER.warn("Mod context extraction failed: {}", e.getMessage());
                 return "";
             })
-            // Step 2: build prompt and ask Claude
+            // Step 2: build prompt and ask Claude (via CLI or API)
             .thenCompose(context -> {
                 String systemPrompt = ContextBuilder.buildSystemPrompt(context);
+                if (Config.USE_CLI.get()) {
+                    return ClaudeCLIClient.ask(question, systemPrompt);
+                }
                 return ClaudeClient.ask(question, systemPrompt);
             })
             // Step 3: send response to all players
             .thenAccept(result -> {
                 AIChatLogger.logAnswer(result.text(), result.inputTokens(), result.outputTokens());
+                MemoryStorage.save(playerName, question, result.text());
                 String formatted = "[" + aiName + "] " + result.text();
                 Component response = Component.literal(formatted);
                 for (ServerPlayer player : event.getPlayer().getServer().getPlayerList().getPlayers()) {
