@@ -31,7 +31,10 @@ public class ResponseFormatter {
         MutableComponent header = Component.literal("[" + aiName + "] ")
                 .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
 
-        String[] paragraphs = rawText.split("\n");
+        // Strip triple backtick code blocks (```...```) — not supported in Minecraft chat
+        String cleaned = rawText.replaceAll("```[\\w]*\\n?", "").replaceAll("```", "");
+
+        String[] paragraphs = cleaned.split("\n");
         boolean firstLine = true;
 
         for (String paragraph : paragraphs) {
