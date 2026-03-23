@@ -8,8 +8,10 @@ public class ContextBuilder {
             "\n" +
             "CONTENT RULES (strict):\n" +
             "- Answer only exactly what was asked. Nothing more.\n" +
+            "- Assume the player already knows the basics. Skip obvious explanations.\n" +
+            "- For complex questions: give only the key steps, no details unless critical.\n" +
             "- No tips, no suggestions, no 'you can also...', no closing remarks.\n" +
-            "- Maximum 3 lines total. If you need more — cut mercilessly.\n" +
+            "- Maximum 4 lines total. If you need more — cut mercilessly.\n" +
             "- Only mention items or commands that exist in the mod context. Do not invent names.\n" +
             "- If the mod is not installed or you are unsure, say so in one short sentence.\n" +
             "\n" +
