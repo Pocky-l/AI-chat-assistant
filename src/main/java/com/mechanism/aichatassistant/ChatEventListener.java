@@ -57,7 +57,9 @@ public class ChatEventListener {
             // Step 3: send response to all players
             .thenAccept(result -> {
                 AIChatLogger.logAnswer(result.text(), result.inputTokens(), result.outputTokens());
-                MemoryStorage.save(playerName, question, result.text());
+                if (!result.text().startsWith("[AI] ")) {
+                    MemoryStorage.save(playerName, question, result.text());
+                }
                 String formatted = "[" + aiName + "] " + result.text();
                 Component response = Component.literal(formatted);
                 for (ServerPlayer player : event.getPlayer().getServer().getPlayerList().getPlayers()) {
