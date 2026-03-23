@@ -30,14 +30,13 @@ public class ChatEventListener {
         String cached = MemoryStorage.findAnswer(question);
         if (cached != null) {
             AIChatLogger.logAnswer("[from memory] " + cached, 0, 0);
-            Component response = Component.literal("[" + aiName + "] " + cached);
-            for (ServerPlayer player : event.getPlayer().getServer().getPlayerList().getPlayers()) {
-                player.sendSystemMessage(response);
+            for (Component line : ResponseFormatter.format(aiName, cached)) {
+                for (ServerPlayer player : event.getPlayer().getServer().getPlayerList().getPlayers()) {
+                    player.sendSystemMessage(line);
+                }
             }
             return;
         }
-
-        event.getPlayer().sendSystemMessage(Component.literal("[" + aiName + "] Thinking..."));
 
         // Step 1: extract mod context asynchronously
         CompletableFuture.supplyAsync(() -> ModContextExtractor.extractRelevantContext(question))
@@ -60,10 +59,10 @@ public class ChatEventListener {
                 if (!result.text().startsWith("[AI] ")) {
                     MemoryStorage.save(playerName, question, result.text());
                 }
-                String formatted = "[" + aiName + "] " + result.text();
-                Component response = Component.literal(formatted);
-                for (ServerPlayer player : event.getPlayer().getServer().getPlayerList().getPlayers()) {
-                    player.sendSystemMessage(response);
+                for (Component line : ResponseFormatter.format(aiName, result.text())) {
+                    for (ServerPlayer player : event.getPlayer().getServer().getPlayerList().getPlayers()) {
+                        player.sendSystemMessage(line);
+                    }
                 }
             })
             .exceptionally(e -> {
