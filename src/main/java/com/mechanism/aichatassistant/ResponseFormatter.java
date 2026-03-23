@@ -1,7 +1,9 @@
 package com.mechanism.aichatassistant;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 
 import java.util.ArrayList;
@@ -86,6 +88,33 @@ public class ResponseFormatter {
         return lines.isEmpty()
             ? List.of(header.copy().append(Component.literal(rawText).withStyle(ChatFormatting.WHITE)))
             : lines;
+    }
+
+    /**
+     * Returns a short version of the response (first 2 lines) with a clickable
+     * "показать подробнее" button. Use when the full answer has more than 2 lines.
+     * If the response fits in 2 lines, returns the full formatted response without a button.
+     */
+    public static List<Component> formatShort(String aiName, String rawText, int detailId) {
+        List<Component> allLines = format(aiName, rawText);
+
+        if (allLines.size() <= 2) {
+            return allLines;
+        }
+
+        List<Component> result = new ArrayList<>(allLines.subList(0, 2));
+
+        MutableComponent button = Component.literal("  [показать подробнее]")
+            .withStyle(style -> style
+                .withColor(ChatFormatting.YELLOW)
+                .withUnderlined(true)
+                .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/aidetail " + detailId))
+                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                    Component.literal("Нажми, чтобы увидеть полный ответ")))
+            );
+        result.add(button);
+
+        return result;
     }
 
     /**

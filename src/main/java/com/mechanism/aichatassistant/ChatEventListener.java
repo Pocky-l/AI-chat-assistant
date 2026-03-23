@@ -30,7 +30,8 @@ public class ChatEventListener {
         String cached = MemoryStorage.findAnswer(question);
         if (cached != null) {
             AIChatLogger.logAnswer("[from memory] " + cached, 0, 0);
-            for (Component line : ResponseFormatter.format(aiName, cached)) {
+            int detailId = DetailStorage.save(cached);
+            for (Component line : ResponseFormatter.formatShort(aiName, cached, detailId)) {
                 for (ServerPlayer player : event.getPlayer().getServer().getPlayerList().getPlayers()) {
                     player.sendSystemMessage(line);
                 }
@@ -59,7 +60,8 @@ public class ChatEventListener {
                 if (!result.text().startsWith("[AI] ")) {
                     MemoryStorage.save(playerName, question, result.text());
                 }
-                for (Component line : ResponseFormatter.format(aiName, result.text())) {
+                int detailId = DetailStorage.save(result.text());
+                for (Component line : ResponseFormatter.formatShort(aiName, result.text(), detailId)) {
                     for (ServerPlayer player : event.getPlayer().getServer().getPlayerList().getPlayers()) {
                         player.sendSystemMessage(line);
                     }
