@@ -35,6 +35,10 @@ bin/
 ### Minecraft Modding ###
 run/
 !**/src/**/run/
+runs/
 **/src/generated/**/.cache/
 repo/
 !**/src/**/repo/
+
+### Claude Code ###
+.claude/
