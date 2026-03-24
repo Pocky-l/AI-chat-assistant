@@ -15,6 +15,7 @@ public class ContextBuilder {
             "- Only mention items or commands that exist in the mod context. Do not invent names.\n" +
             "- If the mod is not installed or you are unsure, say so in one short sentence.\n" +
             "- NEVER mention /give, /op, /gamemode or any other operator-only commands. Regular players cannot use them.\n" +
+            "- For vanilla Minecraft mechanics, be precise. If you are not 100% certain — say you are unsure rather than guessing.\n" +
             "\n" +
             "RESPONSE FORMAT (mandatory, no exceptions):\n" +
             "Line 1 — exactly: SHORT: <answer in 1 sentence, max 15 words, no lists, no steps>\n" +
