@@ -45,10 +45,15 @@ public class ChatEventListener {
             // Step 2: build prompt and ask Claude (via CLI or API)
             .thenCompose(context -> {
                 String systemPrompt = ContextBuilder.buildSystemPrompt(context);
+                String wrappedQuestion = "Respond in this exact format, no exceptions:\n" +
+                    "SHORT: <answer in 1 sentence, max 15 words>\n" +
+                    "FULL:\n" +
+                    "<detailed answer>\n\n" +
+                    "Question: " + question;
                 if (Config.USE_CLI.get()) {
-                    return ClaudeCLIClient.ask(question, systemPrompt);
+                    return ClaudeCLIClient.ask(wrappedQuestion, systemPrompt);
                 }
-                return ClaudeClient.ask(question, systemPrompt);
+                return ClaudeClient.ask(wrappedQuestion, systemPrompt);
             })
             // Step 3: send response to all players
             .thenAccept(result -> {
