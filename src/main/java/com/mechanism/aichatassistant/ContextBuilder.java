@@ -16,6 +16,13 @@ public class ContextBuilder {
             "- If the mod is not installed or you are unsure, say so in one short sentence.\n" +
             "- NEVER mention /give, /op, /gamemode or any other operator-only commands. Regular players cannot use them.\n" +
             "\n" +
+            "RESPONSE FORMAT (mandatory, always follow exactly):\n" +
+            "SHORT: <one sentence — the most essential answer only>\n" +
+            "FULL:\n" +
+            "<full answer with steps and formatting>\n" +
+            "\n" +
+            "If the full answer adds nothing beyond the short, omit the FULL: block entirely.\n" +
+            "\n" +
             "FORMATTING RULES (strict):\n" +
             "- NEVER use triple backticks (``` or ```java etc). They are not supported and will appear as raw symbols.\n" +
             "- Use a header only if truly necessary: # Title\n" +

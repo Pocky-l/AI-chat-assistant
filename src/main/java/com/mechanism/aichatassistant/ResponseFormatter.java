@@ -91,18 +91,14 @@ public class ResponseFormatter {
     }
 
     /**
-     * Returns a short version of the response (first 2 lines) with a clickable
-     * "показать подробнее" button. Use when the full answer has more than 2 lines.
-     * If the response fits in 2 lines, returns the full formatted response without a button.
+     * Formats a short answer with a clickable "показать подробнее" button.
+     * shortText — the one-sentence summary from Claude's SHORT: block.
+     * detailId  — ID in DetailStorage where the full answer is stored.
      */
-    public static List<Component> formatShort(String aiName, String rawText, int detailId) {
-        List<Component> allLines = format(aiName, rawText);
-
-        if (allLines.size() <= 1) {
-            return allLines;
-        }
-
-        List<Component> result = new ArrayList<>(allLines.subList(0, 1));
+    public static List<Component> formatShort(String aiName, String shortText, int detailId) {
+        MutableComponent header = Component.literal("[" + aiName + "] ")
+            .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
+        header.append(parseInline(shortText));
 
         MutableComponent button = Component.literal("  [показать подробнее]")
             .withStyle(style -> style
@@ -112,9 +108,8 @@ public class ResponseFormatter {
                 .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
                     Component.literal("Нажми, чтобы увидеть полный ответ")))
             );
-        result.add(button);
 
-        return result;
+        return List.of(header, button);
     }
 
     /**
