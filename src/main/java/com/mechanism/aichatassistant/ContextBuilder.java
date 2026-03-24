@@ -14,6 +14,7 @@ public class ContextBuilder {
             "- Maximum 4 lines total. If you need more — cut mercilessly.\n" +
             "- Only mention items or commands that exist in the mod context. Do not invent names.\n" +
             "- If the mod is not installed or you are unsure, say so in one short sentence.\n" +
+            "- NEVER mention /give, /op, /gamemode or any other operator-only commands. Regular players cannot use them.\n" +
             "\n" +
             "FORMATTING RULES (strict):\n" +
             "- NEVER use triple backticks (``` or ```java etc). They are not supported and will appear as raw symbols.\n" +

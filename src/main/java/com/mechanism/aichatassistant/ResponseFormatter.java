@@ -98,11 +98,11 @@ public class ResponseFormatter {
     public static List<Component> formatShort(String aiName, String rawText, int detailId) {
         List<Component> allLines = format(aiName, rawText);
 
-        if (allLines.size() <= 2) {
+        if (allLines.size() <= 1) {
             return allLines;
         }
 
-        List<Component> result = new ArrayList<>(allLines.subList(0, 2));
+        List<Component> result = new ArrayList<>(allLines.subList(0, 1));
 
         MutableComponent button = Component.literal("  [показать подробнее]")
             .withStyle(style -> style
