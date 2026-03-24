@@ -99,15 +99,18 @@ public class ChatEventListener {
         List<Component> lines;
 
         if (shortText != null && fullText != null) {
-            // Save full answer and show short + button
+            // Normal case: SHORT + FULL — show short with button
             int detailId = DetailStorage.save(fullText);
             lines = ResponseFormatter.formatShort(aiName, shortText, detailId);
         } else if (shortText != null) {
-            // No full block — just show the short answer
+            // Only SHORT, no FULL — just show it
             lines = ResponseFormatter.format(aiName, shortText);
         } else {
-            // Fallback — show everything
-            lines = ResponseFormatter.format(aiName, rawText);
+            // Fallback (old cache or Claude ignored format):
+            // Show first line as short + button with full text
+            int detailId = DetailStorage.save(rawText);
+            String firstLine = rawText.split("\n")[0].trim();
+            lines = ResponseFormatter.formatShort(aiName, firstLine, detailId);
         }
 
         for (Component line : lines) {

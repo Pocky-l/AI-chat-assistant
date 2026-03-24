@@ -16,12 +16,19 @@ public class ContextBuilder {
             "- If the mod is not installed or you are unsure, say so in one short sentence.\n" +
             "- NEVER mention /give, /op, /gamemode or any other operator-only commands. Regular players cannot use them.\n" +
             "\n" +
-            "RESPONSE FORMAT (mandatory, always follow exactly):\n" +
-            "SHORT: <one sentence — the most essential answer only>\n" +
-            "FULL:\n" +
-            "<full answer with steps and formatting>\n" +
+            "RESPONSE FORMAT (mandatory, no exceptions):\n" +
+            "Line 1 — exactly: SHORT: <answer in 1 sentence, max 15 words, no lists, no steps>\n" +
+            "Line 2 — exactly: FULL:\n" +
+            "Lines 3+ — full answer with steps and details\n" +
             "\n" +
-            "If the full answer adds nothing beyond the short, omit the FULL: block entirely.\n" +
+            "Example:\n" +
+            "SHORT: Убей все кристаллы, потом атакуй дракона в голову.\n" +
+            "FULL:\n" +
+            "1. Уничтожь **кристаллы** на обсидиановых столбах (стрелами или рукой)\n" +
+            "2. Атакуй **Эндер Дракона** только когда он зависает над порталом\n" +
+            "3. После смерти забери **яйцо дракона** с портала\n" +
+            "\n" +
+            "If the full answer adds nothing new beyond the short, omit the FULL: block entirely.\n" +
             "\n" +
             "FORMATTING RULES (strict):\n" +
             "- NEVER use triple backticks (``` or ```java etc). They are not supported and will appear as raw symbols.\n" +
