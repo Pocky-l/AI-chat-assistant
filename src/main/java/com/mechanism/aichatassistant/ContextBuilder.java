@@ -48,15 +48,25 @@ public class ContextBuilder {
      * Trims context if it exceeds the token budget.
      */
     public static String buildSystemPrompt(String modContext) {
-        if (!Config.ENABLE_MOD_CONTEXT.get() || modContext == null || modContext.isBlank()) {
-            return BASE_PROMPT;
+        return buildSystemPrompt(modContext, "");
+    }
+
+    public static String buildSystemPrompt(String modContext, String memoryHistory) {
+        StringBuilder prompt = new StringBuilder(BASE_PROMPT);
+
+        if (!memoryHistory.isBlank()) {
+            prompt.append("\n\nPrevious questions answered on this server (use as reference):\n")
+                  .append(memoryHistory);
         }
 
-        int maxChars = Config.MAX_CONTEXT_TOKENS.get() * 4; // ~4 chars per token
-        String trimmed = modContext.length() > maxChars
-                ? modContext.substring(0, maxChars) + "\n[context trimmed]"
-                : modContext;
+        if (Config.ENABLE_MOD_CONTEXT.get() && modContext != null && !modContext.isBlank()) {
+            int maxChars = Config.MAX_CONTEXT_TOKENS.get() * 4;
+            String trimmed = modContext.length() > maxChars
+                    ? modContext.substring(0, maxChars) + "\n[context trimmed]"
+                    : modContext;
+            prompt.append("\n\nServer mod context:\n").append(trimmed);
+        }
 
-        return BASE_PROMPT + "\n\nServer mod context:\n" + trimmed;
+        return prompt.toString();
     }
 }

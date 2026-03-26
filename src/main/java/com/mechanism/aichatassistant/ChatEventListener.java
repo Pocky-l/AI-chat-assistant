@@ -36,7 +36,13 @@ public class ChatEventListener {
             return;
         }
 
-        AIChatLogger.logSearch("No memory cache hit — starting context extraction pipeline");
+        String memoryHistory = MemoryStorage.getRecentHistory(5);
+        if (!memoryHistory.isBlank()) {
+            AIChatLogger.logSearch("Memory: loaded " + memoryHistory.split("Q:").length + " recent entries as context");
+        } else {
+            AIChatLogger.logSearch("Memory: no history yet");
+        }
+        AIChatLogger.logSearch("No exact memory match — starting context extraction pipeline");
 
         // Step 1: extract mod context asynchronously
         CompletableFuture.supplyAsync(() -> ModContextExtractor.extractRelevantContext(question))
@@ -47,7 +53,7 @@ public class ChatEventListener {
             })
             // Step 2: build prompt and ask Claude (via CLI or API)
             .thenCompose(context -> {
-                String systemPrompt = ContextBuilder.buildSystemPrompt(context);
+                String systemPrompt = ContextBuilder.buildSystemPrompt(context, memoryHistory);
                 int contextLen = context == null ? 0 : context.length();
                 AIChatLogger.logSearch("Context built (" + contextLen + " chars) — sending to Claude via " + (Config.USE_CLI.get() ? "CLI" : "API"));
                 if (contextLen > 0) {
@@ -69,17 +75,17 @@ public class ChatEventListener {
             .thenAccept(result -> {
                 AIChatLogger.logSearch("Response received from Claude — delivering to players");
                 AIChatLogger.logAnswer(result.text(), result.inputTokens(), result.outputTokens());
-                if (!result.text().startsWith("[AI] ")) {
-                    MemoryStorage.save(playerName, question, result.text());
-                }
                 // If we have a recipe, override SHORT with Java-generated answer
                 String recipeSnippet2 = extractRecipeSnippet(ModContextExtractor.getLastContext());
                 String javaShort = buildShortFromRecipe(recipeSnippet2);
+                boolean isError = result.text().startsWith("[AI] ");
                 if (!javaShort.isEmpty()) {
                     AIChatLogger.logSearch("SHORT generated from recipe data (Java): " + javaShort);
+                    if (!isError) MemoryStorage.save(playerName, question, "SHORT: " + javaShort + "\nFULL:\n" + result.text());
                     sendResponseWithShort(event.getPlayer(), aiName, javaShort, result.text());
                 } else {
                     AIChatLogger.logSearch("SHORT extracted from Claude response (first sentence)");
+                    if (!isError) MemoryStorage.save(playerName, question, result.text());
                     sendResponse(event.getPlayer(), aiName, result.text());
                 }
             })
