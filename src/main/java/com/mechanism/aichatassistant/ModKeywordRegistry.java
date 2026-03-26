@@ -18,7 +18,7 @@ public class ModKeywordRegistry {
             List.of("botania", "thaumcraft", "ars", "magic", "blood", "witchery", "hexerei")
         ),
         new ModCategory("TECH",
-            List.of("техника", "механизм", "энергия", "energy", "rf", "forge", "mekanism", "машина", "генератор", "труба", "pipe"),
+            List.of("техника", "механизм", "энергия", "energy", "rf", "forge", "mekanism", "машина", "генератор", "труба", "pipe", "радиация", "дозиметр", "radiation", "химия", "газ", "реактор", "reactor", "chemical"),
             List.of("mekanism", "industrialcraft", "thermal", "applied", "ae2", "create", "buildcraft", "enderio")
         ),
         new ModCategory("STORAGE",

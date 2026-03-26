@@ -44,4 +44,8 @@ public class AIChatLogger {
     public static void logError(String error) {
         write("ERROR", error);
     }
+
+    public static void logSearch(String step) {
+        write("SEARCH", step);
+    }
 }

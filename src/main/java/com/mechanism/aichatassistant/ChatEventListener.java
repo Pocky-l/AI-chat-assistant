@@ -30,26 +30,36 @@ public class ChatEventListener {
         // Check memory for existing answer
         String cached = MemoryStorage.findAnswer(question);
         if (cached != null) {
+            AIChatLogger.logSearch("Answer found in memory cache — skipping mod search and API call");
             AIChatLogger.logAnswer("[from memory] " + cached, 0, 0);
             sendResponse(event.getPlayer(), aiName, cached);
             return;
         }
 
+        AIChatLogger.logSearch("No memory cache hit — starting context extraction pipeline");
+
         // Step 1: extract mod context asynchronously
         CompletableFuture.supplyAsync(() -> ModContextExtractor.extractRelevantContext(question))
             .orTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
             .exceptionally(e -> {
-                MechanismAIChatAssistant.LOGGER.warn("Mod context extraction failed: {}", e.getMessage());
+                AIChatLogger.logSearch("Mod context extraction timed out or failed: " + e.getMessage());
                 return "";
             })
             // Step 2: build prompt and ask Claude (via CLI or API)
             .thenCompose(context -> {
                 String systemPrompt = ContextBuilder.buildSystemPrompt(context);
-                String wrappedQuestion = "Respond in this exact format, no exceptions:\n" +
-                    "SHORT: <answer in 1 sentence, max 15 words>\n" +
-                    "FULL:\n" +
-                    "<detailed answer>\n\n" +
-                    "Question: " + question;
+                int contextLen = context == null ? 0 : context.length();
+                AIChatLogger.logSearch("Context built (" + contextLen + " chars) — sending to Claude via " + (Config.USE_CLI.get() ? "CLI" : "API"));
+                if (contextLen > 0) {
+                    String preview = context.length() > 300 ? context.substring(0, 300) + "..." : context;
+                    AIChatLogger.logSearch("Context preview:\n" + preview);
+                }
+                String recipeSnippet = extractRecipeSnippet(context);
+                String wrappedQuestion = recipeSnippet.isEmpty()
+                    ? "SHORT: <1 sentence answer, max 15 words>\nFULL:\n<detailed answer>\n\nQuestion: " + question
+                    : "The following crafting recipe is confirmed on this server:\n" +
+                      recipeSnippet + "\n" +
+                      "SHORT: <1 sentence answer, max 15 words>\nFULL:\n<detailed answer>\n\nQuestion: " + question;
                 if (Config.USE_CLI.get()) {
                     return ClaudeCLIClient.ask(wrappedQuestion, systemPrompt);
                 }
@@ -57,11 +67,21 @@ public class ChatEventListener {
             })
             // Step 3: send response to all players
             .thenAccept(result -> {
+                AIChatLogger.logSearch("Response received from Claude — delivering to players");
                 AIChatLogger.logAnswer(result.text(), result.inputTokens(), result.outputTokens());
                 if (!result.text().startsWith("[AI] ")) {
                     MemoryStorage.save(playerName, question, result.text());
                 }
-                sendResponse(event.getPlayer(), aiName, result.text());
+                // If we have a recipe, override SHORT with Java-generated answer
+                String recipeSnippet2 = extractRecipeSnippet(ModContextExtractor.getLastContext());
+                String javaShort = buildShortFromRecipe(recipeSnippet2);
+                if (!javaShort.isEmpty()) {
+                    AIChatLogger.logSearch("SHORT generated from recipe data (Java): " + javaShort);
+                    sendResponseWithShort(event.getPlayer(), aiName, javaShort, result.text());
+                } else {
+                    AIChatLogger.logSearch("SHORT extracted from Claude response (first sentence)");
+                    sendResponse(event.getPlayer(), aiName, result.text());
+                }
             })
             .exceptionally(e -> {
                 AIChatLogger.logError("Pipeline failed: " + e.getMessage());
@@ -82,20 +102,143 @@ public class ChatEventListener {
             if (fullIndex != -1) {
                 String shortText = raw.substring(6, fullIndex).trim();
                 String fullText = raw.substring(fullIndex + 6).trim();
-                return new String[]{shortText, fullText};
-            } else {
-                // Only SHORT, no FULL block
-                return new String[]{raw.substring(6).trim(), null};
+                return new String[]{shortText, fullText.isBlank() ? null : fullText};
+            }
+            return new String[]{raw.substring(6).trim(), null};
+        }
+        // Fallback: no format — show first line as short
+        String[] lines = raw.trim().split("\n", 2);
+        return new String[]{lines[0].trim(), lines.length > 1 ? lines[1].trim() : null};
+    }
+
+    /** Extracts the 'Crafting recipes:' section from context, if present. */
+    private static String extractRecipeSnippet(String context) {
+        if (context == null) return "";
+        int start = context.indexOf("Crafting recipes:");
+        if (start == -1) return "";
+        String sub = context.substring(start);
+        int end = sub.indexOf("\n\n");
+        return end > 0 ? sub.substring(0, end).trim() : sub.trim();
+    }
+
+    /**
+     * Builds a short Russian sentence from a recipe snippet.
+     * Example: "Нужно: 4x Lead Ingot, 1x Redstone Dust — shaped крафт в верстаке."
+     */
+    private static final java.util.Map<String, String> RU_NAMES = java.util.Map.ofEntries(
+        java.util.Map.entry("Lead Ingot",               "свинцовый слиток"),
+        java.util.Map.entry("Iron Ingot",               "железный слиток"),
+        java.util.Map.entry("Gold Ingot",               "золотой слиток"),
+        java.util.Map.entry("Copper Ingot",             "медный слиток"),
+        java.util.Map.entry("Tin Ingot",                "оловянный слиток"),
+        java.util.Map.entry("Osmium Ingot",             "осмиевый слиток"),
+        java.util.Map.entry("Steel Ingot",              "стальной слиток"),
+        java.util.Map.entry("Diamond",                  "алмаз"),
+        java.util.Map.entry("Emerald",                  "изумруд"),
+        java.util.Map.entry("Quartz",                   "кварц"),
+        java.util.Map.entry("Redstone Dust",            "красная пыль"),
+        java.util.Map.entry("Redstone",                 "красная пыль"),
+        java.util.Map.entry("Glowstone Dust",           "светящаяся пыль"),
+        java.util.Map.entry("Basic Control Circuit",    "базовая схема управления"),
+        java.util.Map.entry("Advanced Control Circuit", "улучшенная схема управления"),
+        java.util.Map.entry("Elite Control Circuit",    "элитная схема управления"),
+        java.util.Map.entry("Ultimate Control Circuit", "высшая схема управления"),
+        java.util.Map.entry("Glass Pane",               "стеклянная панель"),
+        java.util.Map.entry("Glass Block",              "стекло"),
+        java.util.Map.entry("Iron Block",               "блок железа"),
+        java.util.Map.entry("Gold Block",               "блок золота")
+    );
+
+    static String buildShortFromRecipe(String recipeSnippet) {
+        if (recipeSnippet.isBlank()) return "";
+
+        // Collect ingredient key→name mappings
+        java.util.Map<String, String> keyToName = new java.util.LinkedHashMap<>();
+        for (String line : recipeSnippet.split("\n")) {
+            // Matches lines like "  I = Lead Ingot" or "  C = Basic Control Circuit"
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("^\\s+([A-Za-z])\\s*=\\s*(.+)$").matcher(line);
+            if (m.matches()) keyToName.put(m.group(1), m.group(2).trim());
+        }
+
+        // Count letter occurrences in pattern lines
+        java.util.Map<String, Integer> counts = new java.util.LinkedHashMap<>();
+        boolean inPattern = false;
+        for (String line : recipeSnippet.split("\n")) {
+            if (line.trim().equals("Pattern:")) { inPattern = true; continue; }
+            if (inPattern) {
+                if (line.trim().startsWith("Result:")) break;
+                for (char c : line.toCharArray()) {
+                    String key = String.valueOf(c);
+                    if (keyToName.containsKey(key))
+                        counts.merge(key, 1, Integer::sum);
+                }
             }
         }
-        // Fallback: Claude didn't follow the format — show as full only
-        return new String[]{null, raw};
+
+        if (counts.isEmpty() || keyToName.isEmpty()) return "";
+
+        StringBuilder sb = new StringBuilder("Нужно: ");
+        boolean first = true;
+        for (java.util.Map.Entry<String, Integer> e : counts.entrySet()) {
+            String name = keyToName.getOrDefault(e.getKey(), e.getKey());
+            String ruName = RU_NAMES.getOrDefault(name, name);
+            if (!first) sb.append(", ");
+            sb.append(e.getValue()).append("x ").append(ruName);
+            first = false;
+        }
+        sb.append(" — крафт в верстаке.");
+        return sb.toString();
+    }
+
+    private static String extractFirstSentence(String text) {
+        String[] lines = text.split("\n", -1);
+        for (int i = 0; i < lines.length; i++) {
+            String t = lines[i].trim();
+            if (t.isEmpty()) continue;
+            // Skip pure headers
+            if (t.startsWith("#") || t.startsWith("---")) continue;
+
+            // If line ends with ':' — it's an intro like "you will need:", collect what follows
+            if (t.endsWith(":")) {
+                StringBuilder sb = new StringBuilder(t.replaceAll(":$", "") + ": ");
+                int collected = 0;
+                for (int j = i + 1; j < lines.length && collected < 4; j++) {
+                    String item = lines[j].trim()
+                        .replaceAll("^[-*•]\\s*", "")   // strip bullet
+                        .replaceAll("\\*\\*(.+?)\\*\\*", "$1"); // strip bold
+                    if (item.isEmpty()) break;
+                    if (collected > 0) sb.append(", ");
+                    sb.append(item);
+                    collected++;
+                }
+                return sb.toString();
+            }
+
+            // Normal sentence — find end at . ! ?
+            int end = -1;
+            for (int k = 0; k < t.length(); k++) {
+                char c = t.charAt(k);
+                if (c == '.' || c == '!' || c == '?') { end = k + 1; break; }
+            }
+            String sentence = end > 0 ? t.substring(0, end) : t;
+            return sentence.length() > 100 ? sentence.substring(0, 100) + "…" : sentence;
+        }
+        return lines[0].trim();
     }
 
     /**
      * Sends the response to all players on the server.
      * Shows short answer + "показать подробнее" button if FULL block exists.
      */
+    private static void sendResponseWithShort(ServerPlayer source, String aiName, String shortText, String fullText) {
+        int detailId = DetailStorage.save(fullText);
+        List<Component> lines = ResponseFormatter.formatShort(aiName, shortText, detailId);
+        for (Component line : lines)
+            for (ServerPlayer player : source.getServer().getPlayerList().getPlayers())
+                player.sendSystemMessage(line);
+    }
+
     private static void sendResponse(ServerPlayer source, String aiName, String rawText) {
         String[] parts = parseResponse(rawText);
         String shortText = parts[0];

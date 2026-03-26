@@ -14,6 +14,9 @@ public class ContextBuilder {
             "- Maximum 4 lines total. If you need more — cut mercilessly.\n" +
             "- Only mention items or commands that exist in the mod context. Do not invent names.\n" +
             "- If the mod is not installed or you are unsure, say so in one short sentence.\n" +
+            "- CRITICAL: Do NOT use outside knowledge from the internet, wikis, or any sources beyond what is in this prompt and your vanilla Minecraft knowledge. If the answer is not in the provided mod context — say you don't have that information.\n" +
+            "- CRITICAL: If a crafting recipe is provided in 'Crafting recipes:' section — use ONLY that recipe. Never mention other mods or other recipes you may know. Never say 'рецепт зависит от мода'.\n" +
+            "- Players write in Russian and may use Russian names for mod items. Match them to English names from the mod context by meaning (e.g. 'дозиметр' = 'Geiger Counter', 'костюм химзащиты' = 'Hazmat Suit'). Use the mod context to identify the correct item.\n" +
             "- NEVER mention /give, /op, /gamemode or any other operator-only commands. Regular players cannot use them.\n" +
             "- For vanilla Minecraft mechanics, be precise. If you are not 100% certain — say you are unsure rather than guessing.\n" +
             "\n" +
