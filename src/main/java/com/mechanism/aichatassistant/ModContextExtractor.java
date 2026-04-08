@@ -77,7 +77,7 @@ public class ModContextExtractor {
                 .collect(Collectors.toList());
 
         if (relevantMods.isEmpty()) {
-            AIChatLogger.logSearch("No relevant mods found for these categories");
+            AIChatLogger.logSearch("No relevant mods found for these categories — marking as NOT INSTALLED");
         } else {
             AIChatLogger.logSearch("Relevant mods found: " + relevantMods.stream()
                     .map(m -> m.displayName() + " [" + m.modId() + "]")
@@ -88,8 +88,12 @@ public class ModContextExtractor {
         context.append("Installed mods on this server: ").append(buildShortSummary(allMods)).append("\n\n");
 
         if (relevantMods.isEmpty()) {
-            CACHE.put(cacheKey, context.toString());
-            return context.toString();
+            context.append("NOT INSTALLED ON THIS SERVER: No mods matching this question (categories: ")
+                   .append(categories.stream().map(ModKeywordRegistry.ModCategory::name).collect(Collectors.joining(", ")))
+                   .append(") are installed. Do not answer using outside knowledge.\n");
+            String notInstalled = context.toString();
+            CACHE.put(cacheKey, notInstalled);
+            return notInstalled;
         }
 
         context.append("Mods relevant to this question:\n");

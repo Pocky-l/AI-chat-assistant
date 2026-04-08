@@ -7,7 +7,10 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.ServerChatEvent;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @EventBusSubscriber(modid = MechanismAIChatAssistant.MODID)
 public class ChatEventListener {
@@ -26,6 +29,15 @@ public class ChatEventListener {
         String aiName = Config.AI_NAME.get();
 
         AIChatLogger.logQuestion(playerName, question);
+
+        // Pre-check: if question explicitly names a known mod that isn't installed → respond immediately
+        String notInstalledMod = detectMentionedNotInstalledMod(question);
+        if (notInstalledMod != null) {
+            AIChatLogger.logSearch("Pre-check: mod '" + notInstalledMod + "' mentioned but not installed — skipping Claude");
+            String msg = "SHORT: Мод **" + notInstalledMod + "** не установлен на данном сервере.";
+            sendResponse(event.getPlayer(), aiName, msg);
+            return;
+        }
 
         // Check memory for existing answer
         String cached = MemoryStorage.findAnswer(question);
@@ -243,6 +255,67 @@ public class ChatEventListener {
         for (Component line : lines)
             for (ServerPlayer player : source.getServer().getPlayerList().getPlayers())
                 player.sendSystemMessage(line);
+    }
+
+    /**
+     * Known specific mod names (keyword → display name).
+     * Only unambiguous, specific mod names — no generic terms like "magic" or "storage".
+     */
+    private static final Map<String, String> KNOWN_MOD_KEYWORDS = Map.ofEntries(
+        Map.entry("mekanism",           "Mekanism"),
+        Map.entry("botania",            "Botania"),
+        Map.entry("thaumcraft",         "Thaumcraft"),
+        Map.entry("ae2",                "Applied Energistics 2"),
+        Map.entry("appliedenergistics", "Applied Energistics 2"),
+        Map.entry("create",             "Create"),
+        Map.entry("thermal",            "Thermal Expansion"),
+        Map.entry("buildcraft",         "BuildCraft"),
+        Map.entry("enderio",            "Ender IO"),
+        Map.entry("industrialcraft",    "IndustrialCraft"),
+        Map.entry("ftbquests",          "FTB Quests"),
+        Map.entry("griefprevention",    "GriefPrevention"),
+        Map.entry("worldguard",         "WorldGuard"),
+        Map.entry("towny",              "Towny"),
+        Map.entry("lycanites",          "Lycanites Mobs"),
+        Map.entry("iceandfire",         "Ice and Fire"),
+        Map.entry("bloodmagic",         "Blood Magic"),
+        Map.entry("ars nouveau",        "Ars Nouveau"),
+        Map.entry("ars_nouveau",        "Ars Nouveau"),
+        Map.entry("tinkers",            "Tinkers' Construct"),
+        Map.entry("tconstruct",         "Tinkers' Construct"),
+        Map.entry("immersiveengineering","Immersive Engineering"),
+        Map.entry("kubejs",             "KubeJS"),
+        Map.entry("pneumaticcraft",     "PneumaticCraft"),
+        Map.entry("cofh",               "CoFH Core"),
+        Map.entry("rftools",            "RFTools"),
+        Map.entry("draconicevolution",  "Draconic Evolution"),
+        Map.entry("extrabotany",        "Extra Botany"),
+        Map.entry("pam",                "Pam's HarvestCraft"),
+        Map.entry("harvestcraft",       "Pam's HarvestCraft")
+    );
+
+    /**
+     * Checks if the question explicitly mentions a known mod that is NOT installed on the server.
+     * Returns the display name of the uninstalled mod, or null if no match.
+     */
+    private static String detectMentionedNotInstalledMod(String question) {
+        String lower = question.toLowerCase();
+
+        Set<String> loadedIds = ModListProvider.getLoadedMods().stream()
+                .map(m -> m.modId().toLowerCase())
+                .collect(Collectors.toSet());
+
+        for (Map.Entry<String, String> entry : KNOWN_MOD_KEYWORDS.entrySet()) {
+            String keyword = entry.getKey();
+            if (!lower.contains(keyword)) continue;
+
+            // Check if any loaded mod ID contains this keyword
+            boolean installed = loadedIds.stream().anyMatch(id -> id.contains(keyword));
+            if (!installed) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     private static void sendResponse(ServerPlayer source, String aiName, String rawText) {
