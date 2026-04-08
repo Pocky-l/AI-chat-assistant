@@ -131,6 +131,24 @@ public class ModContextExtractor {
             }
         }
 
+        // Read server-side recipe overrides: KubeJS scripts and datapacks
+        List<String> generalKeywords = buildGeneralKeywords(question);
+        if (!generalKeywords.isEmpty()) {
+            List<String> kubeRecipes = ServerModFilesReader.readKubeJSRecipes(generalKeywords);
+            if (!kubeRecipes.isEmpty()) {
+                AIChatLogger.logSearch("Found " + kubeRecipes.size() + " KubeJS recipe snippets");
+                context.append("\nKubeJS recipe overrides (server scripts):\n");
+                kubeRecipes.forEach(r -> context.append(r).append("\n"));
+            }
+
+            List<String> datapackRecipes = ServerModFilesReader.readDatapackRecipes(generalKeywords);
+            if (!datapackRecipes.isEmpty()) {
+                AIChatLogger.logSearch("Found " + datapackRecipes.size() + " datapack recipe overrides");
+                context.append("\nDatapack recipe overrides:\n");
+                datapackRecipes.forEach(r -> context.append(r).append("\n"));
+            }
+        }
+
         String result = context.toString();
         CACHE.put(cacheKey, result);
         lastContext = result;
@@ -176,6 +194,40 @@ public class ModContextExtractor {
                     // Check if any Russian word from alias appears in question
                     for (String ruWord : russian.split("[/\\s]+")) {
                         if (question.toLowerCase().contains(ruWord) && ruWord.length() >= 4) {
+                            keywords.add(english);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return keywords;
+    }
+
+    /**
+     * Builds general keywords from the question for KubeJS/datapack searches.
+     * Extracts all English words 4+ chars, plus English equivalents from all Russian aliases.
+     */
+    private static List<String> buildGeneralKeywords(String question) {
+        List<String> keywords = new ArrayList<>();
+        String lower = question.toLowerCase();
+
+        for (String word : lower.split("\\s+")) {
+            if (word.length() >= 4 && word.matches("[a-z]+")) {
+                keywords.add(word);
+            }
+        }
+
+        // Add English equivalents from all known aliases
+        for (List<String> aliases : RUSSIAN_ALIASES.values()) {
+            for (String alias : aliases) {
+                String[] parts = alias.split("=", 2);
+                if (parts.length == 2) {
+                    String russian = parts[0].trim().toLowerCase();
+                    String english = parts[1].trim().toLowerCase().replace(" ", "_");
+                    for (String ruWord : russian.split("[/\\s]+")) {
+                        if (ruWord.length() >= 4 && lower.contains(ruWord)) {
                             keywords.add(english);
                             break;
                         }

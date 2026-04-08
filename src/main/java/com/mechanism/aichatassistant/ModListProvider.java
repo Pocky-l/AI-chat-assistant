@@ -154,7 +154,7 @@ public class ModListProvider {
      * Formats a Minecraft crafting recipe JSON into a human-readable string.
      * Supports shaped and shapeless crafting. Skips unknown/complex types.
      */
-    private static String formatRecipe(String name, JsonObject json) {
+    static String formatRecipe(String name, JsonObject json) {
         String type = json.has("type") ? json.get("type").getAsString() : "";
 
         if (type.contains("crafting_shaped")) {

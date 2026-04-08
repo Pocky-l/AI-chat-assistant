@@ -37,5 +37,13 @@ public class Config {
             .comment("Path to the mods folder. Used to read .jar files for mod context.")
             .define("modsFolder", "mods");
 
+    public static final ModConfigSpec.ConfigValue<String> KUBEJS_FOLDER = BUILDER
+            .comment("Path to the KubeJS folder. Used to read server recipe scripts. Default: 'kubejs'")
+            .define("kubejsFolder", "kubejs");
+
+    public static final ModConfigSpec.ConfigValue<String> DATAPACKS_FOLDER = BUILDER
+            .comment("Path to the world datapacks folder. Used to read custom recipe overrides. Default: 'world/datapacks'")
+            .define("datapacksFolder", "world/datapacks");
+
     static final ModConfigSpec SPEC = BUILDER.build();
 }
